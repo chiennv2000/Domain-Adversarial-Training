@@ -1,2 +1,8 @@
+__pycache__
+/data/minist_m
+*.pth
+*.gz
+*.pt
+*.txt
+*.png
 *.pyc
-/data
