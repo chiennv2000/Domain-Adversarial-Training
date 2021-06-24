@@ -1,5 +1,5 @@
 import sys, os
-sys.path.append("..")
+#sys.path.append("..")
 
 import torch
 from torchvision import transforms, datasets
@@ -9,7 +9,7 @@ from dataset import MNDataset
 src_data_name = '../data/MNIST'
 tgt_data_name = '../data/mnist_m'
 
-device = 'cuda'
+device = 'cpu'
 batch_size = 32
 lr = 1e-3
 n_epochs = 100
@@ -29,7 +29,7 @@ img_transform_tgt = transforms.Compose([
 ])
 
 dataset_src = datasets.MNIST(
-    root='data',
+    root='../data',
     train=True,
     transform=img_transform_src,
     download=True

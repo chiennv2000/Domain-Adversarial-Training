@@ -22,6 +22,8 @@ class Model(nn.Module):
     def forward(self, x, alpha):
         x = x.expand(x.data.shape[0], 3, 28, 28)
         feature = self.feature_extractor(x)
+        
+        feature = feature.view(-1, self.out_channels * 4 * 4)
         reverse_feature = ReversalGradient.apply(feature, alpha)
         
         y_pred = self.label_classifier(feature)
@@ -59,7 +61,7 @@ class Trainer(object):
         self._optimizer.zero_grad()
         
         src_y_pred, src_domain_pred = self.model.forward(source_data, alpha)
-        _, tgt_domain_pred = self.model.forward(tgt_data, alpha)
+        _, tgt_domain_pred = self.model.forward(target_data, alpha)
         
         err_src_label = self._loss_class(src_y_pred, source_labels)
         err_src_domain = self._loss_domain(src_domain_pred, torch.zeros(src_y_pred.size(0)).long().to(self._device))
@@ -86,6 +88,6 @@ class Trainer(object):
                 src_data, src_labels = (t.to(self._device) for t in next(src_data_iter))
                 tgt_data, _ = (t.to(self._device) for t in next(tgt_data_iter))
                 
-                loss = self.train_step(src_data, src_label, tgt_data, alpha)
+                loss = self.train_step(src_data, src_labels, tgt_data, alpha)
         
                 print("Epoch: {}/{} - Iter {}/{} - Loss: {}".format(epoch, n_epochs, i, self.num_samples, loss))
