@@ -1,15 +1,16 @@
 import sys, os
 sys.path.append("..")
 
+import torch
 from torchvision import transforms, datasets
 from trainer import Trainer
 from dataset import MNDataset
 
-src_data_name = 'data/MNIST'
-tgt_data_name = 'data/mnist_m'
+src_data_name = '../data/MNIST'
+tgt_data_name = '../data/mnist_m'
 
-device = 'cpu'
-batch_size = 8
+device = 'cuda'
+batch_size = 32
 lr = 1e-3
 n_epochs = 100
 image_size = 28
@@ -55,11 +56,9 @@ dataloader_tgt = torch.utils.data.DataLoader(
 my_trainer = Trainer(in_channels=3,
                      out_channels=50,
                      kernel_size=5,
-                     n_class=10,
-                     lr=lr,
+                     n_classes=10,
                      device=device,
                      dataloader_source=dataloader_src,
                      dataloader_target=dataloader_tgt)
 
-my_trainer.train(n_epochs=n_epochs,
-                 lr = lr)
+my_trainer.train(n_epochs=n_epochs, lr = lr)

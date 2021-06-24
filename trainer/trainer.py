@@ -1,5 +1,8 @@
 import logging, time, sys, os
 sys.path.append("..")
+
+import numpy as np
+import torch.optim as optim
 import torch
 import torch.nn as nn
 
@@ -9,6 +12,7 @@ from utils.function import ReversalGradient
 class Model(nn.Module):
     
     def __init__(self, in_channels, out_channels, kernel_size, n_classes):
+        super(Model, self).__init__()
         self.out_channels = out_channels
         
         self.feature_extractor = FeatureExtractor(in_channels, out_channels, kernel_size)
@@ -16,6 +20,7 @@ class Model(nn.Module):
         self.label_classifier = Classifier(out_channels * 4 * 4, n_classes)
     
     def forward(self, x, alpha):
+        x = x.expand(x.data.shape[0], 3, 28, 28)
         feature = self.feature_extractor(x)
         reverse_feature = ReversalGradient.apply(feature, alpha)
         
@@ -42,7 +47,7 @@ class Trainer(object):
         self._device = device
         
         self.dataloader_source = dataloader_source
-        self.dataloader_target = dataloader_targer
+        self.dataloader_target = dataloader_target
         self.num_samples = min(len(dataloader_source), len(dataloader_target))
     
     def train_step(self,
@@ -57,13 +62,13 @@ class Trainer(object):
         _, tgt_domain_pred = self.model.forward(tgt_data, alpha)
         
         err_src_label = self._loss_class(src_y_pred, source_labels)
-        err_src_domain = self._loss_domain(src_domain_pred, torch.zeros(src_y_pred.size()).long().to(self._device))
-        err_tgt_domain = self._loss_domain(tgt_domain_pred, torch.ones(src_y_pred.size()).long().to(self._device))
+        err_src_domain = self._loss_domain(src_domain_pred, torch.zeros(src_y_pred.size(0)).long().to(self._device))
+        err_tgt_domain = self._loss_domain(tgt_domain_pred, torch.ones(src_y_pred.size(0)).long().to(self._device))
         
         err = err_src_label + err_src_domain + err_tgt_domain
         
         err.backward()
-        optimizer.step()
+        self._optimizer.step()
         
         return err
         
@@ -78,18 +83,9 @@ class Trainer(object):
                 p = float(i + epoch * self.num_samples) / n_epochs / self.num_samples
                 alpha = 2. / (1. + np.exp(-10 * p)) - 1
                 
-                src_data, src_labels = (t.to(device) for t in next(src_data_iter))
-                tgt_data, _ = (t.to(device) for t in next(tgt_data_iter))
+                src_data, src_labels = (t.to(self._device) for t in next(src_data_iter))
+                tgt_data, _ = (t.to(self._device) for t in next(tgt_data_iter))
                 
                 loss = self.train_step(src_data, src_label, tgt_data, alpha)
         
                 print("Epoch: {}/{} - Iter {}/{} - Loss: {}".format(epoch, n_epochs, i, self.num_samples, loss))
-            
-                
-                
-                
-        
-        
-        
-        
-        
